@@ -3,6 +3,7 @@
 import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js'
 import RecordPlugin from 'https://unpkg.com/wavesurfer.js@7/dist/plugins/record.esm.js'
 var ctxSip;
+var mediaRecorder;
 
 $(document).ready(function() {
 
@@ -329,8 +330,43 @@ $(document).ready(function() {
                 var tEle = document.getElementById(item.id);
                 ctxSip.callTimers[item.id] = new Stopwatch(tEle);
                 ctxSip.callTimers[item.id].start();
+
                 const deviceId = micSelect.value
-                record.startRecording({ deviceId }).then(() => {console.log("wave start")});
+                record.startRecording({ deviceId }).then(() => {
+                    console.log("Waveform: " + ctxSip.callActiveID);
+
+                    if (ctxSip.Sessions[ctxSip.callActiveID]) {
+                        var sess = ctxSip.Sessions[ctxSip.callActiveID]
+                        var stream = sess.getRemoteStreams()[0];
+                        const remotecontainer = document.querySelector('#remoterecordings');
+                        remotecontainer.innerHTML = '';
+    
+                        mediaRecorder = new MediaStreamRecorder(stream);
+                        mediaRecorder.mimeType = 'audio/wav'; // check this line for audio/wav
+                        mediaRecorder.ondataavailable = function (blob) {
+                            // POST/PUT "Blob" using FormData/XHR2
+                            var blobURL = URL.createObjectURL(blob);
+
+                            // Create wavesurfer from the recorded audio
+                            const wavesurfer = WaveSurfer.create({
+                                container: remotecontainer,
+                                waveColor: 'rgb(200, 100, 0)',
+                                progressColor: 'rgb(100, 50, 0)',
+                                url: blobURL,
+                            })
+
+                            // Play button
+                            const button = remotecontainer.appendChild(document.createElement('button'))
+                            button.textContent = 'Play'
+                            button.onclick = () => wavesurfer.playPause()
+                            wavesurfer.on('pause', () => (button.textContent = 'Play'))
+                            wavesurfer.on('play', () => (button.textContent = 'Pause'))
+
+                            mediaRecorder.stop();
+                        };
+                        mediaRecorder.start(10000);
+                    }
+                });
             }
 
             if (callActive && item.status !== 'ringing') {
@@ -432,7 +468,8 @@ $(document).ready(function() {
             } else if (s.cancel) {
                 s.cancel();
             }
-            record.stopRecording()
+            record.stopRecording();
+            mediaRecorder.stop();
         },
 
         sipSendDTMF : function(digit) {
