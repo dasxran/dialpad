@@ -1,7 +1,5 @@
 /* globals SIP,user,moment, Stopwatch */
 
-import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js'
-import RecordPlugin from 'https://unpkg.com/wavesurfer.js@7/dist/plugins/record.esm.js'
 var ctxSip;
 
 $(document).ready(function() {
@@ -329,8 +327,6 @@ $(document).ready(function() {
                 var tEle = document.getElementById(item.id);
                 ctxSip.callTimers[item.id] = new Stopwatch(tEle);
                 ctxSip.callTimers[item.id].start();
-                const deviceId = micSelect.value
-                record.startRecording({ deviceId }).then(() => {console.log("wave start")});
             }
 
             if (callActive && item.status !== 'ringing') {
@@ -432,7 +428,7 @@ $(document).ready(function() {
             } else if (s.cancel) {
                 s.cancel();
             }
-            record.stopRecording()
+
         },
 
         sipSendDTMF : function(digit) {
@@ -784,7 +780,7 @@ $(document).ready(function() {
         }
 
         function render() {
-            timer.innerHTML = moment(clock).utc().format('mm:ss');
+            timer.innerHTML = moment(clock).format('mm:ss');
         }
 
         function delta() {
@@ -803,49 +799,4 @@ $(document).ready(function() {
         this.stop  = stop; //function() { stop; }
     };
 
-
-    // Create an instance of WaveSurfer
-    const wavesurfer = WaveSurfer.create({
-        container: '#mic',
-        waveColor: 'rgb(200, 0, 200)',
-        progressColor: 'rgb(100, 0, 100)',
-    })
-
-    // Initialize the Record plugin
-    const record = wavesurfer.registerPlugin(RecordPlugin.create())
-
-    // Render recorded audio
-    record.on('record-end', (blob) => {
-        const container = document.querySelector('#recordings')
-        container.innerHTML = '';
-        const recordedUrl = URL.createObjectURL(blob)
-
-        // Create wavesurfer from the recorded audio
-        const wavesurfer = WaveSurfer.create({
-            container,
-            waveColor: 'rgb(200, 100, 0)',
-            progressColor: 'rgb(100, 50, 0)',
-            url: recordedUrl,
-        })
-
-        // Play button
-        const button = container.appendChild(document.createElement('button'))
-        button.textContent = 'Play'
-        button.onclick = () => wavesurfer.playPause()
-        wavesurfer.on('pause', () => (button.textContent = 'Play'))
-        wavesurfer.on('play', () => (button.textContent = 'Pause'))
-    })
-
-    const micSelect = document.querySelector('#mic-select')
-    {
-        // Mic selection
-        RecordPlugin.getAvailableAudioDevices().then((devices) => {
-            devices.forEach((device) => {
-                const option = document.createElement('option')
-                option.value = device.deviceId
-                option.text = device.label || device.deviceId
-                micSelect.appendChild(option)
-            })
-        })
-    }
 });
