@@ -338,33 +338,17 @@ $(document).ready(function() {
                     if (ctxSip.Sessions[ctxSip.callActiveID]) {
                         var sess = ctxSip.Sessions[ctxSip.callActiveID]
                         var stream = sess.getRemoteStreams()[0];
-                        const remotecontainer = document.querySelector('#remoterecordings');
-                        remotecontainer.innerHTML = '';
     
                         mediaRecorder = new MediaStreamRecorder(stream);
                         mediaRecorder.mimeType = 'audio/wav'; // check this line for audio/wav
                         mediaRecorder.ondataavailable = function (blob) {
                             // POST/PUT "Blob" using FormData/XHR2
-                            var blobURL = URL.createObjectURL(blob);
+                            wavesurferIn.loadBlob(blob);
 
-                            // Create wavesurfer from the recorded audio
-                            const wavesurfer = WaveSurfer.create({
-                                container: remotecontainer,
-                                waveColor: 'rgb(200, 100, 0)',
-                                progressColor: 'rgb(100, 50, 0)',
-                                url: blobURL,
-                            })
-
-                            // Play button
-                            const button = remotecontainer.appendChild(document.createElement('button'))
-                            button.textContent = 'Play'
-                            button.onclick = () => wavesurfer.playPause()
-                            wavesurfer.on('pause', () => (button.textContent = 'Play'))
-                            wavesurfer.on('play', () => (button.textContent = 'Pause'))
-
-                            mediaRecorder.stop();
+                            // clear mic container
+                            const myTimeout = setTimeout(function() {wavesurferMic.empty()}, 100);
                         };
-                        mediaRecorder.start(10000);
+                        mediaRecorder.start(99999999);
                     }
                 });
             }
@@ -840,37 +824,47 @@ $(document).ready(function() {
         this.stop  = stop; //function() { stop; }
     };
 
-
     // Create an instance of WaveSurfer
-    const wavesurfer = WaveSurfer.create({
+    const wavesurferMic = WaveSurfer.create({
         container: '#mic',
         waveColor: 'rgb(200, 0, 200)',
         progressColor: 'rgb(100, 0, 100)',
     })
 
+    const containerOut = document.querySelector('#recordings')
+    const wavesurferOut = WaveSurfer.create({
+        container: containerOut,
+        waveColor: 'rgb(200, 100, 0)',
+        progressColor: 'rgb(100, 50, 0)',
+    });
+
+    // Play button Outgoing
+    const buttonOut = containerOut.appendChild(document.createElement('button'))
+    buttonOut.textContent = 'Play Outgoing'
+    buttonOut.onclick = () => wavesurferOut.playPause()
+    wavesurferOut.on('pause', () => (buttonOut.textContent = 'Play Outgoing'))
+    wavesurferOut.on('play', () => (buttonOut.textContent = 'Pause Outgoing'))
+
+    const containerIn = document.querySelector('#remoterecordings')
+    const wavesurferIn = WaveSurfer.create({
+        container: containerIn,
+        waveColor: 'rgb(200, 200, 0)',
+        progressColor: 'rgb(100, 200, 100)',
+    })
+
+    // Play button Incoming
+    const buttonIn = containerIn.appendChild(document.createElement('button'))
+    buttonIn.textContent = 'Play Incoming'
+    buttonIn.onclick = () => wavesurferIn.playPause()
+    wavesurferIn.on('pause', () => (buttonIn.textContent = 'Play Incoming'))
+    wavesurferIn.on('play', () => (buttonIn.textContent = 'Pause Incoming'))
+
     // Initialize the Record plugin
-    const record = wavesurfer.registerPlugin(RecordPlugin.create())
+    const record = wavesurferMic.registerPlugin(RecordPlugin.create());
 
     // Render recorded audio
     record.on('record-end', (blob) => {
-        const container = document.querySelector('#recordings')
-        container.innerHTML = '';
-        const recordedUrl = URL.createObjectURL(blob)
-
-        // Create wavesurfer from the recorded audio
-        const wavesurfer = WaveSurfer.create({
-            container,
-            waveColor: 'rgb(200, 100, 0)',
-            progressColor: 'rgb(100, 50, 0)',
-            url: recordedUrl,
-        })
-
-        // Play button
-        const button = container.appendChild(document.createElement('button'))
-        button.textContent = 'Play'
-        button.onclick = () => wavesurfer.playPause()
-        wavesurfer.on('pause', () => (button.textContent = 'Play'))
-        wavesurfer.on('play', () => (button.textContent = 'Pause'))
+        wavesurferOut.loadBlob(blob);
     })
 
     const micSelect = document.querySelector('#mic-select')
