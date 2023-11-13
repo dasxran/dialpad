@@ -2,6 +2,8 @@
 
 import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js'
 import RecordPlugin from 'https://unpkg.com/wavesurfer.js@7/dist/plugins/record.esm.js'
+import TimelinePlugin from 'https://unpkg.com/wavesurfer.js@7/dist/plugins/timeline.esm.js'
+
 var ctxSip;
 var mediaRecorder;
 
@@ -346,7 +348,7 @@ $(document).ready(function() {
                             wavesurferIn.loadBlob(blob);
 
                             // clear mic container
-                            const myTimeout = setTimeout(function() {wavesurferMic.empty()}, 100);
+                            const myTimeout = setTimeout(function() {wavesurferMic.empty()}, 500);
                         };
                         mediaRecorder.start(99999999);
                     }
@@ -824,6 +826,8 @@ $(document).ready(function() {
         this.stop  = stop; //function() { stop; }
     };
 
+    //========================================== wavesurfer ==========================================
+
     // Create an instance of WaveSurfer
     const wavesurferMic = WaveSurfer.create({
         container: '#mic',
@@ -863,11 +867,26 @@ $(document).ready(function() {
         },
     })
 
+    // Initialize the Record plugin
+    const record = wavesurferMic.registerPlugin(RecordPlugin.create());
+
     const containerOut = document.querySelector('#recordings')
+    const topTimeline1 = TimelinePlugin.create({
+        height: 16,
+        insertPosition: 'beforebegin',
+        timeInterval: 0.2,
+        primaryLabelInterval: 5,
+        secondaryLabelInterval: 1,
+        style: {
+            fontSize: '16px',
+            color: '#42cef5',
+        },
+    })
     const wavesurferOut = WaveSurfer.create({
         container: containerOut,
         waveColor: 'rgb(200, 100, 0)',
         progressColor: 'rgb(100, 50, 0)',
+        plugins: [topTimeline1],
     });
 
     // Play button Outgoing
@@ -878,10 +897,22 @@ $(document).ready(function() {
     wavesurferOut.on('play', () => (buttonOut.textContent = 'Pause Outgoing'))
 
     const containerIn = document.querySelector('#remoterecordings')
+    const topTimeline2 = TimelinePlugin.create({
+        height: 16,
+        insertPosition: 'beforebegin',
+        timeInterval: 0.2,
+        primaryLabelInterval: 5,
+        secondaryLabelInterval: 1,
+        style: {
+            fontSize: '16px',
+            color: '#42cef5',
+        },
+    })
     const wavesurferIn = WaveSurfer.create({
         container: containerIn,
         waveColor: 'rgb(200, 200, 0)',
         progressColor: 'rgb(100, 200, 100)',
+        plugins: [topTimeline2],
     })
 
     // Play button Incoming
@@ -890,9 +921,6 @@ $(document).ready(function() {
     buttonIn.onclick = () => wavesurferIn.playPause()
     wavesurferIn.on('pause', () => (buttonIn.textContent = 'Play Incoming'))
     wavesurferIn.on('play', () => (buttonIn.textContent = 'Pause Incoming'))
-
-    // Initialize the Record plugin
-    const record = wavesurferMic.registerPlugin(RecordPlugin.create());
 
     // Render recorded audio
     record.on('record-end', (blob) => {
